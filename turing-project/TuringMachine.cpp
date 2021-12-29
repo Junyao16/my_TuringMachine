@@ -22,6 +22,18 @@ TuringMachine::TuringMachine(string tmFileName){
         int i = 0;
         while(getline(tmFile, line)){
             i++;
+            string tmpline;
+            bool notnull = 0;
+            for(int i = 0; i < line.length(); i++){
+                if(line[i] != ' ' && notnull == 0){
+                    notnull = 1;
+                    tmpline += line[i];
+                }
+                else if(notnull == 1){
+                    tmpline += line[i];
+                }
+            }
+            line = tmpline;
             if(line.length() > 5){
                 if(line[0] == '#'){
                     if(line[1] == 'Q'){
@@ -282,7 +294,7 @@ TuringMachine::TuringMachine(string tmFileName){
                             exit(-1);
                         }
                         if(tapeNum == 0){
-                            if(line.length() >= 7){
+                            if(line.length() >= 6){
                                 string num = line.substr(5, line.length());
                                 for(int k = 0; k < num.size(); k++){
                                     if(num[k] >= '0' && num[k] <= '9'){
@@ -401,6 +413,18 @@ TuringMachine::TuringMachine(string tmFileName){
         int i = 0;
         while(getline(tmFile, line)){
             i++;
+            string tmpline;
+            bool notnull = 0;
+            for(int i = 0; i < line.length(); i++){
+                if(line[i] != ' ' && notnull == 0){
+                    notnull = 1;
+                    tmpline += line[i];
+                }
+                else if(notnull == 1){
+                    tmpline += line[i];
+                }
+            }
+            line = tmpline;
             if(line.length() == 0){
                 continue;
             }
@@ -567,14 +591,108 @@ void TuringMachine::displayTM(){
 }
 
 void TuringMachine::dealInput(string input, bool verbose){
+    // vector<char> tape;
+    // vector<int> index;
+    map<int, char> tape;
     for(int i = 0; i < input.length(); i++){
         if(find(symbols.begin(), symbols.end(), input[i]) == symbols.end()){
             cerr << "illegal input" << endl;
             cerr << "turing: illegal input." << endl;
             exit(-1);
         }
+        // tape.push_back(input[i]);
+        // index.push_back(i);
+        tape.insert(pair <int, char> (i, input[i]));
     }
+    vector<map<int, char>> tapes;
+    tapes.push_back(tape);
+
+    for(int i = 1; i < tapeNum; i++){
+        tape.clear();
+        tape.insert(pair <int, char> (0, '_'));
+        tapes.push_back(tape);
+    }
+
+    // vector<vector<char>> tapes;
+    // vector<vector<int>> indexs;
+    // tapes.push_back(tape);
+    // indexs.push_back(index);
+    // for(int i = 1; i < tapeNum; i++){
+    //     tapes.push_back({'_'});
+    //     indexs.push_back({0});
+
+    // }
+
     if(!verbose){
+        string cState = startState;
+        vector<int> indexs;
+        for(int i = 0; i < tapeNum; i++){
+            indexs.push_back(0);
+        }
+        vector<char> cSymbols;
+        for(int i = 0; i < tapeNum; i++){
+            cSymbols.push_back('_');
+        }
+        cSymbols[0] = input[0];
+
+        while(find(finalStates.begin(), finalStates.end(), cState) == finalStates.end()){
+            // cout<<cState<<endl;
+            for(int i = 0; i < tapeNum; i++){
+                if(tapes[i].find(indexs[i]) != tapes[i].end()){
+                    cSymbols[i] = tapes[i][indexs[i]];
+                }
+                else{
+                    tapes[i].insert(pair <int, char> (indexs[i], '_'));
+                    cSymbols[i] = tapes[i][indexs[i]];
+                }
+                // cout<<cSymbols[i]<<endl;
+            }
+            // cout << cState << endl;
+            for(int i = 0; i < delta.size(); i++){
+                if(delta[i].curState == cState){
+                    bool judge = 1;
+                    for(int j = 0; j < tapeNum; j++){
+                        if(delta[i].oldSymbol[j] != cSymbols[j]){
+                            judge = 0;
+                            break;
+                        }
+                    }
+                    if(judge == 1){
+                        for(int j = 0; j < tapeNum; j++){
+                            tapes[j][indexs[j]] = delta[i].newSymbol[j];
+                            if(delta[i].direction[j] == LEFT){
+                                indexs[j] -= 1;
+                            }
+                            if(delta[i].direction[j] == RIGHT){
+                                indexs[j] += 1;
+                            }
+                        }
+                        cState = delta[i].newState;
+                        break;
+                    }
+                }
+            }
+            // cout << cState << endl;
+        }
+        std::map <int, char> ::iterator it;
+        std::map <int, char> ::iterator itEnd;
+        it = tapes[0].begin();
+        itEnd = tapes[0].end();
+        bool notnull = 0;
+        string ans;
+        while(it != itEnd){
+            if(it->second != '_' && notnull == 0){
+                notnull = 1;
+                ans += it->second;
+            }
+            else if(notnull == 1){
+                ans += it->second;
+            }
+            it++;
+        }
+        cout << ans << endl;
+    }
+    else{
         
     }
 }
