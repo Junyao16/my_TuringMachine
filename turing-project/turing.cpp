@@ -14,6 +14,8 @@ int judge_arg(int argc, char* argv[]);
 int main(int argc, char* argv[]) {
     judge_arg(argc, argv);
     TuringMachine tm(tmFileName);
+    // tm.displayTM();
+    tm.dealInput(tmInput, verbose);
     return 0;
 }
 
@@ -32,7 +34,7 @@ int judge_arg(int argc, char* argv[]){
                 verbose = 1;
             }
             else{
-                cerr << "turing: unknown option argument \"" << arg << "\"" <<endl;
+                cerr << "turing: unknown option argument \"" << arg << "\"." <<endl;
                 cerr << "Use \"turing --help\" for a complete list of options." << endl;
                 exit(-1);
             }
@@ -45,10 +47,15 @@ int judge_arg(int argc, char* argv[]){
                 tmInput = arg;
             }
             else{
-                cerr << "turing: unknown command \"" << arg << "\"" <<endl;
+                cerr << "turing: unknown command \"" << arg << "\"." <<endl;
                 cerr << "Use \"turing --help\" for a complete list of options." << endl;
                 exit(-1);
             }
         }
+    }
+    if(tmFileName.length() == 0 || tmInput.length() == 0){
+        cerr << "turing: missing argument." <<endl;
+        cerr << "Use \"turing --help\" for a complete list of options." << endl;
+        exit(-1);
     }
 }

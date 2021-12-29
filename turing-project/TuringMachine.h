@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -22,13 +23,15 @@ struct TransitionFunction{
 class TuringMachine{
 private:
     vector<string> states;
-    vector<char> symbol;
-    vector<char> tapeSymbol;
-    string q0;
-    char blank;
+    vector<char> symbols;
+    vector<char> tapeSymbols;
+    string startState;
+    char blankSymbol;
     vector<string> finalStates;
     int tapeNum;
     vector<TransitionFunction> delta; 
 public:
     TuringMachine(string tmFileName);
+    void displayTM();
+    void dealInput(string input, bool verbose);
 };
