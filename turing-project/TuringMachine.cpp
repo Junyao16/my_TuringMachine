@@ -515,7 +515,7 @@ TuringMachine::TuringMachine(string tmFileName){
                 }
                 nState += line[j];
             }
-            if(find(states.begin(), states.end(), cState) == states.end()){
+            if(find(states.begin(), states.end(), nState) == states.end()){
                 cerr << "syntax error" << endl;
                 cerr << "turing: \033[31mline " << i << "\033[0m: invalid new state." << endl;
                 exit(-1);
