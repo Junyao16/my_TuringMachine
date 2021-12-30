@@ -1,30 +1,29 @@
-;This program is to check if the input string is in the Language of L1={a^i b^j a^i b^j | i,j>0}
-;Input: a string of a's and b's, e.g."aabbaabb"
+;This program is to check if the input string is in the language of L2={1^m x 1^n = 1^mn}
+;Input: a string of 1's, x's and ='s. e.g."111x11=111111"
 
-;To check if the string is in the Language of L1, there are two steps:
-;Step1: Check if the string is in the form of {a^* b^* a^* b^*} e.g. aabab
-;   in start_state: if the first char is 'a',start the turing machine
-                    ;if the first char is 'b',reject
-                    ;if the input is empty, accept
-; there are four parts of the string {a^* b^* a^* b^*}
-; while reading the input string, there are four states:1a, 1b, 2a, 2b.
-; when the program is reading the first part(1st a^*), it's in state 1a
-; when the program is reading the second part(1st b^*), it's in state 1b 
-; when the program is reading the third part(2nd a^*), it's in state 2a
-; when the program is reading the fourth part(2nd b^*), it's in state 2b
-; when in state 1a&1b, copy the string to 2nd tape;when in state 2a&2b, copy the string to 3rd tape
+;There are two steps:first step to check if the string is in the correct form, second to check the number of '1' is correct
+;Step1: Check if string is in the form of "1^* x 1^* = 1*x" e.g."11x111=111"
+;   divide the string by 'x' and '=', there are three parts:before symbol 'x'(be_x),after symbol 'x'(af_x) and after symbol '='(af_e)
+;   the transition functions are below, it's easy to check.if it's not in the correct form, reject immediately.
+;   while checking,copy the 1st,2nd and 3rd part to 2nd,3rd and 4th tape.
 
-;Step2: Check if i==j, that's to check if the string on 2nd tape equals to the string on 3rd tape
-; in state cmp, from the left to the right, scan the 2nd and 3rd tape in the same time
-; if the symbols are the same, empty this cell and move on until the both tapes are empty->accept
-; if the symbols aren't the same -> reject
+;Step2: Check if the number of '1' is correct.
+;m,n and p are the number of '1' on three tapes. Check if m*n==p
+;there are: m*n=p <=> (m-1)*n=p-n <=>...<=>0*n=0
+;1) if there are '1' on 2nd tape, scan the 3rd tape.else -> reject
+;2) while scanning the 3rd tape, empty the same number of '1' on 4th tape.if scanning is not finish and the 4th tape is already empty->reject
+;3) finish scanning the 3rd tape, empty one '1' on the 2nd tape
+;4) if the 2nd and 4th tape are both empty->accept
+;5) else continue 1)
 
+;to scan the 3rd tape from left to right, it's in state ck1
+;else it's in state ck2
 
-#Q = {0,1a,1b,2a,2b,cmp,accept,accept2,accept3,accept4,halt_accept,reject,reject2,reject3,reject4,reject5,halt_reject}
+#Q = {0,be_x,af_x,af_e,ck1,ck2,accept,accept2,accept3,accept4,halt_accept,reject,reject2,reject3,reject4,reject5,halt_reject}
 
-#S = {a,b}
+#S = {1,x,=}
 
-#G = {a,b,_,t,r,u,e,f,l,s}
+#G = {1,x,=,_,t,r,u,e,f,a,l,s}
 
 #q0 = 0
 
@@ -32,56 +31,64 @@
 
 #F = {halt_accept,halt_reject}
 
-#N = 3
+#N = 4
 
 ; State 0: start state
-0 a__ a__ *** 1a
-0 b__ b__ *** reject
-0 ___ ___ *** accept
+0 1___ 1___ **** be_x
+0 x___ x___ **** reject
+0 =___ =___ **** reject
+0 ____ ____ **** accept
 
-; State 1a: while 
-1a a__ _a_ rr* 1a
-1a b__ _b_ rr* 1b
-1a ___ ___ *** reject
+; State be_x: while Before symbol'x',copy string to 2nd tape
+be_x 1___ _1__ rr** be_x
+be_x x___ ____ r*** af_x
+be_x =___ =___ **** reject
+be_x ____ ____ **** reject
 
-; 1b
-1b a__ __a r*r 2a
-1b b__ _b_ rr* 1b
-1b ___ ___ rr* reject
+; State af_x: while After symbol'x', copy string to 3rd tape
+af_x 1___ __1_ r*r* af_x
+af_x =___ ____ r*** af_e
+af_x x___ x___ **** reject
+af_x ____ ____ **** reject
 
-;2a 
-2a a__ __a r*r 2a
-2a b__ __b r*r 2b
-2a ___ ___ *** reject
+; State af_e: while After symbol equal'=', copy string to 4th tape
+af_e 1___ ___1 r**r af_e
+af_e ____ ____ *lll ck1
+af_e x___ x___ **** reject
+af_e =___ =___ **** reject
 
-;2b 
-2b a__ a__ *** reject
-2b b__ __b r*r 2b
-2b ___ ___ *ll cmp
+; State ck1: From right to left scan 3rd tape
+ck1 _111 _11_ **ll ck1
+ck1 _11_ ____ **** reject
+ck1 _1_1 ___1 *lr* ck2
+ck1 _1__ ____ *l** ck2
+ck1 __11 ____ **** reject
+ck1 __1_ ____ **** reject
+ck1 ___1 ____ **** reject
+ck1 ____ ____ **** accept
 
-;cmp
-cmp _bb ___ *ll cmp
-cmp _aa ___ *ll cmp
-cmp _ba ___ *** reject
-cmp _ab ___ *** reject
-cmp _b_ ___ *** reject
-cmp _a_ ___ *** reject
-cmp __b ___ *** reject
-cmp __a ___ *** reject
-cmp ___ ___ *** accept
+; State ck2: From left to right scan 3rd tape
+ck2 _111 _11_ **rl ck2
+ck2 _11_ ____ **** reject
+ck2 _1_1 ___1 *ll* ck1
+ck2 _1__ ____ *l** ck1
+ck2 __11 ____ **** reject
+ck2 __1_ ____ **** reject
+ck2 ___1 ____ **** reject
+ck2 ____ ____ **** accept
 
 ; State accept*: write 'true' on 1st tape
-accept ___ t__ r** accept2
-accept2 ___ r__ r** accept3
-accept3 ___ u__ r** accept4
-accept4 ___ e__ *** halt_accept
+accept ____ t___ r*** accept2
+accept2 ____ r___ r*** accept3
+accept3 ____ u___ r*** accept4
+accept4 ____ e___ **** halt_accept
 
 ; State reject*: write 'false' on 1st tape
-reject a__ ___ r** reject
-reject b__ ___ r** reject
-reject ___ f__ r** reject2
-reject2 ___ a__ r** reject3
-reject3 ___ l__ r** reject4
-reject4 ___ s__ r** reject5
-reject5 ___ e__ *** halt_reject
-
+reject 1___ ____ r*** reject
+reject x___ ____ r*** reject
+reject =___ ____ r*** reject
+reject ____ f___ r*** reject2
+reject2 ____ a___ r*** reject3
+reject3 ____ l___ r*** reject4
+reject4 ____ s___ r*** reject5
+reject5 ____ e___ **** halt_reject

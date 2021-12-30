@@ -591,39 +591,25 @@ void TuringMachine::displayTM(){
 }
 
 void TuringMachine::dealInput(string input, bool verbose){
-    // vector<char> tape;
-    // vector<int> index;
-    map<int, char> tape;
-    for(int i = 0; i < input.length(); i++){
-        if(find(symbols.begin(), symbols.end(), input[i]) == symbols.end()){
-            cerr << "illegal input" << endl;
-            cerr << "turing: illegal input." << endl;
-            exit(-1);
-        }
-        // tape.push_back(input[i]);
-        // index.push_back(i);
-        tape.insert(pair <int, char> (i, input[i]));
-    }
-    vector<map<int, char>> tapes;
-    tapes.push_back(tape);
-
-    for(int i = 1; i < tapeNum; i++){
-        tape.clear();
-        tape.insert(pair <int, char> (0, '_'));
-        tapes.push_back(tape);
-    }
-
-    // vector<vector<char>> tapes;
-    // vector<vector<int>> indexs;
-    // tapes.push_back(tape);
-    // indexs.push_back(index);
-    // for(int i = 1; i < tapeNum; i++){
-    //     tapes.push_back({'_'});
-    //     indexs.push_back({0});
-
-    // }
-
     if(!verbose){
+        //initialize tapes
+        map<int, char> tape;
+        for(int i = 0; i < input.length(); i++){
+            if(find(symbols.begin(), symbols.end(), input[i]) == symbols.end()){
+                cerr << "illegal input" << endl;
+                exit(-1);
+            }
+            tape.insert(pair <int, char> (i, input[i]));
+        }
+        vector<map<int, char>> tapes;
+        tapes.push_back(tape);
+
+        for(int i = 1; i < tapeNum; i++){
+            tape.clear();
+            tape.insert(pair <int, char> (0, '_'));
+            tapes.push_back(tape);
+        }
+
         string cState = startState;
         vector<int> indexs;
         for(int i = 0; i < tapeNum; i++){
@@ -690,9 +676,262 @@ void TuringMachine::dealInput(string input, bool verbose){
             }
             it++;
         }
+        for(int j = ans.length() - 1; j >= 0; j-- ){
+            if(ans[j] != '_') break;
+            else{
+                ans.pop_back();
+            }
+        }
         cout << ans << endl;
     }
     else{
+        int tapeDigit = 0;
+        int tmpNum = tapeNum;
+        while(tmpNum != 0){
+            tapeDigit++;
+            tmpNum/=10;
+        }
         
+        //initialize tapes
+        map<int, char> tape;
+        for(int i = 0; i < input.length(); i++){
+            //deal with illegal input
+            if(find(symbols.begin(), symbols.end(), input[i]) == symbols.end()){
+                cerr << "Input: " << input << endl;
+                cerr << "==================== ERR ====================" << endl;
+                cerr << "\'" << input[i] << "\' was not declared in the set of input symbols" << endl;
+                cerr << "Input: " << input << endl;
+                cerr << "       ";
+                for(int j = 0; j < i; j++){
+                    cerr << " ";
+                }
+                cerr << "^" << endl;
+                cerr << "==================== END ====================" << endl;
+                exit(-1);
+            }
+            tape.insert(pair <int, char> (i, input[i]));
+        }
+        cerr << "Input: " << input << endl;
+        cerr << "==================== RUN ====================" << endl;
+
+        vector<map<int, char>> tapes;
+        tapes.push_back(tape);
+
+        for(int i = 1; i < tapeNum; i++){
+            tape.clear();
+            tape.insert(pair <int, char> (0, '_'));
+            tapes.push_back(tape);
+        }
+
+        int step = 0;
+
+        string cState = startState;
+        vector<int> indexs;
+        for(int i = 0; i < tapeNum; i++){
+            indexs.push_back(0);
+        }
+        vector<char> cSymbols;
+        for(int i = 0; i < tapeNum; i++){
+            cSymbols.push_back('_');
+        }
+        cSymbols[0] = input[0];
+
+        //execute -v 
+        while(find(finalStates.begin(), finalStates.end(), cState) == finalStates.end()){
+            // cout<<cState<<endl;
+            for(int i = 0; i < tapeNum; i++){
+                if(tapes[i].find(indexs[i]) != tapes[i].end()){
+                    cSymbols[i] = tapes[i][indexs[i]];
+                }
+                else{
+                    tapes[i].insert(pair <int, char> (indexs[i], '_'));
+                    cSymbols[i] = tapes[i][indexs[i]];
+                }
+                // cout<<cSymbols[i]<<endl;
+            }
+            // cout << cState << endl;
+            for(int i = 0; i < delta.size(); i++){
+                if(delta[i].curState == cState){
+                    bool judge = 1;
+                    for(int j = 0; j < tapeNum; j++){
+                        if(delta[i].oldSymbol[j] != cSymbols[j]){
+                            judge = 0;
+                            break;
+                        }
+                    }
+                    if(judge == 1){
+                        for(int j = 0; j < tapeNum; j++){
+                            tapes[j][indexs[j]] = delta[i].newSymbol[j];
+                            if(delta[i].direction[j] == LEFT){
+                                indexs[j] -= 1;
+                            }
+                            if(delta[i].direction[j] == RIGHT){
+                                indexs[j] += 1;
+                            }
+                        }
+                        cState = delta[i].newState;
+                        break;
+                    }
+                }
+            }
+
+            for(int i = 0; i < tapeNum; i++){
+                if(tapes[i].find(indexs[i]) == tapes[i].end()){
+                    tapes[i].insert(pair <int, char> (indexs[i], '_'));
+                    // cout << "insert tape " << i << " index " << indexs[i] << endl;
+                }
+                else {
+                    // cout << "find tape " << i << " index " << indexs[i] << endl;
+                }
+            }
+
+            // cout << cState << endl;
+
+            //display execution
+            cout << "Step  ";
+            for(int i = 0; i < tapeDigit; i++){
+                cout << " ";
+            }
+            cout << ": " << step << endl;
+
+            for(int i = 0; i < tapeNum; i++){
+                //display index
+                cout << "Index" << i << " ";
+                int indexDigit = 0;
+                int tmpIndex = i;
+                if(tmpIndex == 0){
+                    indexDigit = 1;
+                }
+                while(tmpIndex != 0){
+                    tmpIndex/=10;
+                    indexDigit++;
+                }
+                for(int j = 0; j < tapeDigit - indexDigit; j++){
+                    cout << " ";
+                }
+                cout << ": ";
+
+                std::map <int, char> ::iterator it;
+                std::map <int, char> ::iterator itEnd;
+                it = tapes[i].begin();
+                itEnd = tapes[i].end();
+                bool notnull = 0;
+                vector <int> ansIndex;
+                string ans;
+                while(it != itEnd){
+                    if(it->second != '_' && notnull == 0){
+                        notnull = 1;
+                        ans += it->second;
+                        ansIndex.push_back(it->first);
+                    }
+                    else if(it->first == indexs[i]){
+                        notnull == 1;
+                        ans += it->second;
+                        ansIndex.push_back(it->first);
+                    }
+                    else if(notnull == 1){
+                        ans += it->second;
+                        ansIndex.push_back(it->first);
+                    }
+                    it++;
+                }
+                for(int j = ans.length() - 1; j >= 0; j-- ){
+                    if(ans[j] != '_' || ansIndex[j] == indexs[i]) break;
+                    else{
+                        ans.pop_back();
+                        ansIndex.pop_back();
+                    }
+                }
+                if(ans.length() == 0){
+                    ans = ans + tapes[i].find(indexs[i])->second;
+                    ansIndex.push_back(indexs[i]);
+                }
+                for(int j = 0; j < ansIndex.size(); j++){
+                    cout << abs(ansIndex[j]) << " ";
+                }
+                cout << endl;
+                
+                cout << "Tape" << i << "  ";
+                for(int j = 0; j < tapeDigit - indexDigit; j++){
+                    cout << " ";
+                }
+                cout << ": ";
+                for(int j = 0; j < ans.size(); j++){
+                    cout << ans[j];
+                    int cIndexDigit = 0;
+                    int tmpIndex = ansIndex[j];
+                    if(tmpIndex == 0){
+                        cIndexDigit = 1;
+                    }
+                    while(tmpIndex != 0){
+                        tmpIndex/=10;
+                        cIndexDigit++;
+                    }
+                    for(int k = 0; k < cIndexDigit; k++){
+                        cout << " ";
+                    }
+                }
+                cout << endl;
+
+                cout << "Head" << i << "  ";
+                for(int j = 0; j < tapeDigit - indexDigit; j++){
+                    cout << " ";
+                }
+                cout << ": ";
+                for(int j = 0; j < ansIndex.size(); j++){
+                    if(ansIndex[j] == indexs[i]){
+                        cout << "^" << endl;
+                        break;
+                    }
+                    else{
+                        int cIndexDigit = 0;
+                        int tmpIndex = ansIndex[j];
+                        if(tmpIndex == 0){
+                            cIndexDigit = 1;
+                        }
+                        while(tmpIndex != 0){
+                            tmpIndex/=10;
+                            cIndexDigit++;
+                        }
+                        for(int k = 0; k < cIndexDigit; k++){
+                            cout << " ";
+                        }
+                        cout << " ";
+                    }
+                }
+            }
+            cout << "State ";
+            for(int i = 0; i < tapeDigit; i++){
+                cout << " ";
+            }
+            cout << ": " << cState << endl;
+            
+            cout << "---------------------------------------------" << endl;
+            step++;
+        }
+        std::map <int, char> ::iterator it;
+        std::map <int, char> ::iterator itEnd;
+        it = tapes[0].begin();
+        itEnd = tapes[0].end();
+        bool notnull = 0;
+        string ans;
+        while(it != itEnd){
+            if(it->second != '_' && notnull == 0){
+                notnull = 1;
+                ans += it->second;
+            }
+            else if(notnull == 1){
+                ans += it->second;
+            }
+            it++;
+        }
+        for(int j = ans.length() - 1; j >= 0; j-- ){
+            if(ans[j] != '_') break;
+            else{
+                ans.pop_back();
+            }
+        }
+        cout << "Result: " << ans << endl;
+        cout << "==================== END ====================" << endl;
     }
 }
