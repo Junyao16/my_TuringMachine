@@ -390,7 +390,7 @@ TuringMachine::TuringMachine(string tmFileName){
         }
         if(find(tapeSymbols.begin(), tapeSymbols.end(), '_') == tapeSymbols.end()){
             cerr << "syntax error" << endl;
-            cerr << "turing: \033[31mstart states\033[0m: have no blank symbol." << endl;
+            cerr << "turing: \033[31mtape symbols\033[0m: have no blank symbol." << endl;
             exit(-1);
         }
         for(int j = 0; j < symbols.size(); j++){
